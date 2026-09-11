@@ -43,4 +43,4 @@ async def delete_room(room_id: int, db: MyDb):
     room.is_active = False
 
     await db.commit()
-    return {"msg": "Room soft deleted successfully"}
+    return {"msg": "Room soft delete"}
