@@ -1,16 +1,18 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, status, Depends
 from sqlalchemy import select
 from app.database.base import MyDb
 from app.models.branches import Branch
 from app.models.rooms import Room
 from app.schemas.rooms import RoomCreate, RoomResponse
 from app.utils.checked import check_ident
+from app.utils.security import get_current_user
 
 router = APIRouter(tags=['Room'], prefix="/rooms")
 
 
 @router.post('/', status_code=status.HTTP_201_CREATED)
-async def create_room(room: RoomCreate, db: MyDb):
+async def create_room(room: RoomCreate, db: MyDb,
+                      current_user = Depends(get_current_user)):
 
     # check branch id
     await check_ident(db, Branch, room.branch_id)
@@ -25,11 +27,8 @@ async def create_room(room: RoomCreate, db: MyDb):
 
 @router.get('/', response_model=list[RoomResponse])
 async def list_rooms(db: MyDb, is_active: bool = True):
-    result = await db.execute(select(Room))
 
-    if is_active:
-        result = await db.execute(select(Room).where(Room.is_active == is_active))
-
+    result = await db.execute(select(Room).where(Room.is_active == is_active))
     return result.scalars().all()
 
 
