@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -9,5 +10,6 @@ class Settings(BaseSettings):
     DB_NAME: str
     SECRET_KEY: str = Field(min_length=16)
     ALGORITHM: str
+    CORS_ORIGINS: list[str]
 
 settings = Settings()
