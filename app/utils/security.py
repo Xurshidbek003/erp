@@ -4,8 +4,9 @@ from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from jose import jwt, ExpiredSignatureError, JWTError
 from sqlalchemy import select
-
+from sqlalchemy.orm import selectinload
 from app.database.base import MyDb
+from app.models.employee_roles import EmployeeRole
 from app.models.employees import Employees
 from app.utils.config import settings
 
@@ -80,9 +81,26 @@ async def get_current_user(db: MyDb, token = Depends(bearer)):
     except JWTError:
         raise HTTPException(status_code=401, detail="Token yaroqsiz yoki muddati o'tgan")
 
-    result = await db.execute(select(Employees).where(Employees.id == user_id))
+    result = await db.execute(select(Employees).where(Employees.id == user_id).options(selectinload(Employees.employee_roles).selectinload(EmployeeRole.role)))
     user_data = result.scalars().first()
     if not user_data:
         raise HTTPException(status_code=404, detail="Foydalanuvchi topilmadi")
 
     return user_data
+
+
+
+def require_role(*allowed_roles):
+    async def checker(current_user = Depends(get_current_user)):
+
+        user_roles = [employee_role.role.code for employee_role in current_user.employee_roles]
+
+        if not any(role in allowed_roles for role in user_roles):
+            raise HTTPException(
+                status_code=403,
+                detail="Permission denied"
+            )
+
+        return current_user
+
+    return checker

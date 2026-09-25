@@ -5,16 +5,15 @@ from app.models.branches import Branch
 from app.models.rooms import Room
 from app.schemas.rooms import RoomCreate, RoomResponse
 from app.utils.checked import check_ident
-from app.utils.security import get_current_user
+from app.utils.security import require_role
 
 router = APIRouter(tags=['Room'], prefix="/rooms")
 
 
 @router.post('/', status_code=status.HTTP_201_CREATED)
 async def create_room(room: RoomCreate, db: MyDb,
-                      current_user = Depends(get_current_user)):
+                      dependencies=Depends(require_role("manager", "teacher"))):
 
-    # check branch id
     await check_ident(db, Branch, room.branch_id)
 
     obj = Room(

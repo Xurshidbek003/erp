@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Boolean, Date, DateTime, \
-    ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, Date, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
 from app.database.base import Base
 
 
@@ -21,3 +21,6 @@ class Employees(Base):
     is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
     updated_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
+
+
+    employee_roles = relationship("EmployeeRole", back_populates="employee")
