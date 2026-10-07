@@ -1,15 +1,16 @@
-from fastapi import APIRouter, status, HTTPException
+from fastapi import APIRouter, status, HTTPException, Depends
 from sqlalchemy import select
 from app.database.base import MyDb
 from app.models.branches import Branch
 from app.schemas.branches import BranchCreate, BranchResponse
-
+from app.utils.security import require_roles
 
 router = APIRouter(tags=['Branches'], prefix="/branches")
 
 
 @router.post('/', status_code=status.HTTP_201_CREATED)
-async def create_branch(branch: BranchCreate, db: MyDb):
+async def create_branch(branch: BranchCreate, db: MyDb,
+                        dependencies=Depends(require_roles(["admin"]))):
     result = await db.execute(select(Branch).where(Branch.code == branch.code))
     branch_code = result.scalars().first()
 

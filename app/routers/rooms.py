@@ -5,14 +5,15 @@ from app.models.branches import Branch
 from app.models.rooms import Room
 from app.schemas.rooms import RoomCreate, RoomResponse
 from app.utils.checked import check_ident
-from app.utils.security import require_role
+from app.utils.security import require_roles
+
 
 router = APIRouter(tags=['Room'], prefix="/rooms")
 
 
 @router.post('/', status_code=status.HTTP_201_CREATED)
 async def create_room(room: RoomCreate, db: MyDb,
-                      dependencies=Depends(require_role("manager", "teacher"))):
+                      dependencies=Depends(require_roles(["manager", "admin"]))):
 
     await check_ident(db, Branch, room.branch_id)
 
@@ -31,9 +32,9 @@ async def list_rooms(db: MyDb, is_active: bool = True):
     return result.scalars().all()
 
 
-
 @router.delete('/{room_id}')
-async def delete_room(room_id: int, db: MyDb):
+async def delete_room(room_id: int, db: MyDb,
+                      dependencies=Depends(require_roles(["manager", "admin"]))):
 
     room = await check_ident(db, Room, room_id)
 

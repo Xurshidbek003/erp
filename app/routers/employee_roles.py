@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status, HTTPException
+from fastapi import APIRouter, status, HTTPException, Depends
 from sqlalchemy import select
 from app.database.base import MyDb
 from app.models.branches import Branch
@@ -7,12 +7,14 @@ from app.models.employees import Employees
 from app.models.roles import Role
 from app.schemas.employee_roles import EmployeeRolesCreate, EmployeeRolesResponse
 from app.utils.checked import check_ident
+from app.utils.security import require_roles
 
 router = APIRouter(tags=['Employee_Roles'], prefix="/employee_roles")
 
 
 @router.post('/', status_code=status.HTTP_201_CREATED)
-async def create_employee_role(employee_role: EmployeeRolesCreate, db: MyDb):
+async def create_employee_role(employee_role: EmployeeRolesCreate, db: MyDb,
+                               dependencies=Depends(require_roles(["admin"]))):
 
     result = await db.scalar(select(EmployeeRole).
                               where(
@@ -38,7 +40,7 @@ async def create_employee_role(employee_role: EmployeeRolesCreate, db: MyDb):
 
 
 @router.get('/', response_model=list[EmployeeRolesResponse])
-async def list_employee_roles(db: MyDb):
+async def list_employee_roles(db: MyDb, dependencies=Depends(require_roles(["manager", "admin"]))):
 
     result = await db.execute(select(EmployeeRole))
 

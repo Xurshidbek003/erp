@@ -4,15 +4,14 @@ from app.database.base import MyDb
 from app.models.roles import Role
 from app.schemas.roles import RoleCreate, RoleResponse, RoleUpdate
 from app.utils.checked import check_ident
-from app.utils.security import get_current_user
-
+from app.utils.security import require_roles
 
 router = APIRouter(tags=['Roles'], prefix="/roles")
 
 
 @router.post('/', status_code=status.HTTP_201_CREATED)
 async def create_role(role: RoleCreate, db: MyDb,
-                      current_user = Depends(get_current_user)):
+                      dependencies=Depends(require_roles(["admin"]))):
 
     result = await db.execute(select(Role).where(Role.code == role.code))
     code = result.scalars().first()
@@ -29,14 +28,14 @@ async def create_role(role: RoleCreate, db: MyDb,
 
 
 @router.get('/', response_model=list[RoleResponse])
-async def list_roles(db: MyDb):
+async def list_roles(db: MyDb, dependencies=Depends(require_roles(["manager", "admin"]))):
     result = await db.execute(select(Role))
     return result.scalars().all()
 
 
 @router.put('/{role_id}')
 async def update_role(role_id: int, role: RoleUpdate, db: MyDb,
-                      current_user = Depends(get_current_user)):
+                      dependencies=Depends(require_roles(["admin"]))):
 
     role_result = await check_ident(db, Role, role_id)
 
@@ -52,10 +51,9 @@ async def update_role(role_id: int, role: RoleUpdate, db: MyDb,
     return {"msg": "Role updated successfully"}
 
 
-
 @router.delete('/{role_id}')
 async def delete_role(role_id: int, db: MyDb,
-                      current_user = Depends(get_current_user)):
+                      dependencies=Depends(require_roles(["admin"]))):
 
     role = await check_ident(db, Role, role_id)
 

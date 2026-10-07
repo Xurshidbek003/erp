@@ -89,18 +89,20 @@ async def get_current_user(db: MyDb, token = Depends(bearer)):
     return user_data
 
 
+def require_roles(allowed_roles: list[str]):
 
-def require_role(*allowed_roles):
-    async def checker(current_user = Depends(get_current_user)):
+    def role_checker(current_user: Employees = Depends(get_current_user)):
 
-        user_roles = [employee_role.role.code for employee_role in current_user.employee_roles]
+        user_roles = [
+            emp_role.role.code
+            for emp_role in current_user.employee_roles
+            if emp_role.role is not None
+        ]
 
-        if not any(role in allowed_roles for role in user_roles):
-            raise HTTPException(
-                status_code=403,
-                detail="Permission denied"
-            )
+        for role in user_roles:
+            if role in allowed_roles:
+                return current_user
 
-        return current_user
+        raise HTTPException(403, "Ushbu amalni bajarish uchun sizda yetarli huquq yo'q.")
 
-    return checker
+    return role_checker
