@@ -1,10 +1,11 @@
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, Request
 from sqlalchemy import select
 from app.database.base import MyDb
 from app.models.branches import Branch
 from app.models.rooms import Room
 from app.schemas.rooms import RoomCreate, RoomResponse
 from app.utils.checked import check_ident
+from app.utils.rate_limit import limiter, get_user_id_key
 from app.utils.security import require_roles
 
 
@@ -12,7 +13,8 @@ router = APIRouter(tags=['Room'], prefix="/rooms")
 
 
 @router.post('/', status_code=status.HTTP_201_CREATED)
-async def create_room(room: RoomCreate, db: MyDb,
+@limiter.limit('5/minute', key_func=get_user_id_key)
+async def create_room(request: Request, room: RoomCreate, db: MyDb,
                       dependencies=Depends(require_roles(["manager", "admin"]))):
 
     await check_ident(db, Branch, room.branch_id)
